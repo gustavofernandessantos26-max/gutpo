@@ -1,33 +1,90 @@
-<script>
-    const elem = document.getElementById('globeViz');
-    
-    // Inicializa o Globo
-    const world = Globe()
-        (elem)
-        .globeImageUrl('//unpkg.com/three-globe/example/img/earth-night.jpg')
-        .backgroundColor('rgba(0,0,0,0)')
-        .showAtmosphere(true)
-        .atmosphereColor('#00f3ff')
-        .atmosphereDaylightAlpha(0.1)
-        .polygonCapColor(() => 'rgba(0, 243, 255, 0.2)')
-        .polygonStrokeColor(() => '#ff00de')
-        .polygonSideColor(() => 'rgba(255, 0, 222, 0.1)')
-        .onPolygonClick(({ lat, lng }) => {
-            // A mágica acontece aqui: Acessa a parte clicada
-            world.pointOfView({ lat, lng, altitude: 1.5 }, 1000);
-        })
-        .controlsByTwoTouch(true); // Melhora uso no celular
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Olá Mundo Complexo</title>
+    <style>
+        :root {
+            --primary-color: #00ffcc;
+            --bg-color: #0a0a0a;
+            --font-stack: 'Courier New', Courier, monospace;
+        }
 
-    // Carrega os dados geográficos
-    fetch('//unpkg.com/world-atlas/countries-110m.json')
-        .then(res => res.json())
-        .then(countries => {
-            world.polygonsData(countries.objects.countries.geometries);
-        });
+        body {
+            background-color: var(--bg-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            font-family: var(--font-stack);
+        }
 
-    // Função para redimensionar o globo com a janela
-    window.addEventListener('resize', () => {
-        world.width(window.innerWidth);
-        world.height(window.innerHeight * 0.8);
-    });
-</script>
+        .container {
+            text-align: center;
+            position: relative;
+        }
+
+        .glitch-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            font-size: 5rem;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            position: relative;
+            text-shadow: 0 0 10px var(--primary-color);
+            margin: 0;
+        }
+
+        /* Efeito de Cursor Piscante */
+        h1::after {
+            content: '|';
+            animation: blink 0.7s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        /* Partículas de Fundo (Simuladas via CSS) */
+        .particles {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1;
+            filter: blur(1px);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="glitch-wrapper">
+            <h1 id="typewriter"></h1>
+        </div>
+    </div>
+
+    <script>
+        const text = "Olá, Mundo!";
+        const speed = 150; // Velocidade em ms
+        let i = 0;
+
+        function typeWriter() {
+            if (i < text.length) {
+                document.getElementById("typewriter").innerHTML += text.charAt(i);
+                i++;
+                setTimeout(typeWriter, speed);
+            }
+        }
+
+        // Inicia a função quando a página carrega
+        window.onload = typeWriter;
+    </script>
+</body>
+</html>
