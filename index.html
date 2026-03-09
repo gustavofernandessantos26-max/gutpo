@@ -3,192 +3,119 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Olá Mundo 3D Experience</title>
+    <title>Explorador Global - GITHUB Edition</title>
+    <script src="https://cesium.com/downloads/cesiumjs/releases/1.108/Build/Cesium/Cesium.js"></script>
+    <link href="https://cesium.com/downloads/cesiumjs/releases/1.108/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
     <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-            background: #000;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        html, body, #cesiumContainer {
+            width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden;
+            background-color: #000;
         }
 
-        /* Fundo de Estrelas */
-        #stars-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 0;
-        }
-
-        /* Botão Estilizado */
-        #ui-layer {
+        /* Interface do Botão GitHub */
+        #ui-overlay {
             position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 10;
-            transition: opacity 1s, transform 1s;
+            top: 20px;
+            left: 20px;
+            z-index: 100;
+            display: flex;
+            gap: 10px;
         }
 
-        .btn-github {
+        .btn-nav {
             display: flex;
             align-items: center;
             background: #fff;
-            border-radius: 10px;
+            border-radius: 5px;
             cursor: pointer;
             border: none;
             overflow: hidden;
-            box-shadow: 0 0 20px rgba(255,153,0,0.4);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            font-family: sans-serif;
             transition: 0.3s;
-            text-decoration: none;
         }
 
-        .btn-github:hover {
-            transform: scale(1.1);
-            box-shadow: 0 0 40px rgba(255,153,0,0.7);
-        }
+        .btn-nav:hover { transform: translateY(-2px); }
 
-        .text {
-            padding: 15px 25px;
-            font-weight: bold;
-            font-size: 1.2rem;
-            color: #000;
-        }
+        .text { padding: 10px 15px; font-weight: bold; color: #000; }
+        .brand { background: #000; padding: 10px 15px; color: #ff9900; font-weight: 900; }
 
-        .brand {
-            background: #000;
-            padding: 15px 25px;
-            color: #ff9900;
-            font-weight: 900;
-            font-size: 1.2rem;
-        }
-
-        /* Canvas do Mundo */
-        #world-canvas {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 2s ease-in;
-        }
-
-        .active #ui-layer {
-            opacity: 0;
-            pointer-events: none;
-            transform: translate(-50%, -50%) scale(0.5);
-        }
-
-        .active #world-canvas {
-            opacity: 1;
-            pointer-events: all;
-        }
-
-        #instrucoes {
+        /* Menu de Destinos */
+        #menu-paises {
             position: absolute;
-            bottom: 20px;
-            color: white;
-            width: 100%;
-            text-align: center;
-            display: none;
-            text-shadow: 0 0 5px #000;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 100;
+            display: flex;
+            gap: 15px;
+            background: rgba(0,0,0,0.7);
+            padding: 15px;
+            border-radius: 50px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,153,0,0.3);
         }
+
+        .dest-btn {
+            background: transparent;
+            border: 1px solid #ff9900;
+            color: #fff;
+            padding: 8px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .dest-btn:hover { background: #ff9900; color: #000; }
     </style>
 </head>
 <body>
 
-    <div id="stars-container"></div>
-
-    <div id="ui-layer">
-        <button class="btn-github" onclick="startExperience()">
+    <div id="ui-overlay">
+        <div class="btn-nav">
             <span class="text">Olá Mundo</span>
             <span class="brand">GITHUB</span>
-        </button>
+        </div>
     </div>
 
-    <canvas id="world-canvas"></canvas>
-    <div id="instrucoes">Arraste para girar o mundo</div>
+    <div id="menu-paises">
+        <button class="dest-btn" onclick="flyTo(-22.9519, -43.2105, 1500)">Brasil (Rio)</button>
+        <button class="dest-btn" onclick="flyTo(48.8584, 2.2945, 1000)">França (Paris)</button>
+        <button class="dest-btn" onclick="flyTo(35.6895, 139.6917, 2000)">Japão (Tokyo)</button>
+        <button class="dest-btn" onclick="flyTo(-13.1631, -72.5450, 3000)">Peru (Machu Picchu)</button>
+    </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <div id="cesiumContainer"></div>
 
     <script>
-        // Configuração do Universo de Estrelas
-        const starsContainer = document.getElementById('stars-container');
-        const starCount = 400;
-        for (let i = 0; i < starCount; i++) {
-            const star = document.createElement('div');
-            star.style.position = 'absolute';
-            star.style.width = '2px';
-            star.style.height = '2px';
-            star.style.background = 'white';
-            star.style.top = Math.random() * 100 + '%';
-            star.style.left = Math.random() * 100 + '%';
-            star.style.opacity = Math.random();
-            star.style.borderRadius = '50%';
-            starsContainer.appendChild(star);
-        }
+        // Inicializa o Globo com imagens de satélite reais
+        const viewer = new Cesium.Viewer('cesiumContainer', {
+            terrainProvider: Cesium.createWorldTerrain(), // Ativa montanhas 3D
+            baseLayerPicker: false,
+            geocoder: true, // Barra de busca de qualquer lugar do mundo
+            homeButton: false,
+            sceneModePicker: false,
+            navigationHelpButton: false,
+            animation: false,
+            timeline: false
+        });
 
-        // Função para iniciar a transição para o Mundo
-        function startExperience() {
-            document.body.classList.add('active');
-            document.getElementById('instrucoes').style.display = 'block';
-            init3D();
-        }
-
-        // Engine 3D (Three.js)
-        function init3D() {
-            const scene = new THREE.Scene();
-            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-            const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('world-canvas'), antialias: true, alpha: true });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-
-            // Criando o Globo
-            const geometry = new THREE.SphereGeometry(2, 64, 64);
-            const material = new THREE.MeshPhongMaterial({
-                color: 0x156289,
-                emissive: 0x072534,
-                side: THREE.DoubleSide,
-                flatShading: false,
-                wireframe: true // Estilo "holograma/digital"
+        // Função de "Voo" cinematográfico para os locais
+        function flyTo(lat, lon, height) {
+            viewer.camera.flyTo({
+                destination: Cesium.Cartesian3.fromDegrees(lon, lat, height),
+                orientation: {
+                    heading: Cesium.Math.toRadians(0),
+                    pitch: Cesium.Math.toRadians(-35),
+                    roll: 0.0
+                },
+                duration: 4 // Tempo de viagem em segundos
             });
-            const globe = new THREE.Mesh(geometry, material);
-            scene.add(globe);
-
-            // Iluminação
-            const light = new THREE.PointLight(0xffffff, 1, 100);
-            light.position.set(5, 5, 5);
-            scene.add(light);
-            scene.add(new THREE.AmbientLight(0x333333));
-
-            camera.position.z = 5;
-
-            // Interatividade (Mouse)
-            let isDragging = false;
-            let mouseX = 0, mouseY = 0;
-
-            document.addEventListener('mousedown', () => isDragging = true);
-            document.addEventListener('mouseup', () => isDragging = false);
-            document.addEventListener('mousemove', (e) => {
-                if(isDragging) {
-                    globe.rotation.y += e.movementX * 0.005;
-                    globe.rotation.x += e.movementY * 0.005;
-                }
-            });
-
-            // Animação contínua
-            function animate() {
-                requestAnimationFrame(animate);
-                if(!isDragging) {
-                    globe.rotation.y += 0.002;
-                }
-                renderer.render(scene, camera);
-            }
-            animate();
         }
+
+        // Adiciona atmosfera e iluminação dinâmica
+        viewer.scene.globe.enableLighting = true;
+        viewer.scene.skyAtmosphere.show = true;
     </script>
 </body>
 </html>
