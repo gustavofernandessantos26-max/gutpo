@@ -3,125 +3,138 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mapa Mundi Interativo - GITHUB</title>
+    <title>Global GITHUB Explorer</title>
     
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    
+    <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+    <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
+
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        
-        body, html { height: 100%; font-family: 'Segoe UI', sans-serif; }
+        body { margin: 0; padding: 0; background: #000; overflow: hidden; font-family: 'Inter', sans-serif; }
+        #map { position: absolute; top: 0; bottom: 0; width: 100%; }
 
-        #map {
-            width: 100%;
-            height: 100vh;
-            background: #0b0e14;
-        }
-
-        /* Sobreposição do Botão */
-        #ui-container {
+        /* UI Overlay Superior */
+        .overlay {
             position: absolute;
             top: 20px;
             left: 50%;
             transform: translateX(-50%);
-            z-index: 1000;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .btn-github {
+            z-index: 10;
             display: flex;
             align-items: center;
-            background: white;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
             border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            border: 1px solid #000;
             overflow: hidden;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
             cursor: pointer;
-            border: 2px solid #000;
-            transition: 0.3s;
+            transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
-        .btn-github:hover {
-            transform: translateY(-3px) scale(1.05);
-            box-shadow: 0 15px 30px rgba(255, 153, 0, 0.4);
+        .overlay:hover { transform: translateX(-50%) scale(1.05); }
+
+        .ola { padding: 12px 20px; font-weight: 800; color: #000; text-transform: uppercase; }
+        .github { background: #000; color: #ff9900; padding: 12px 20px; font-weight: 900; }
+
+        /* Controles de Navegação */
+        .nav-bar {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            display: flex;
+            gap: 10px;
         }
 
-        .text { padding: 15px 25px; font-weight: bold; font-size: 1.1rem; color: #000; }
-        .brand { background: #000; padding: 15px 25px; color: #ff9900; font-weight: 900; font-size: 1.1rem; }
-
-        /* Estilo dos Popups no Mapa */
-        .leaflet-popup-content-wrapper {
-            background: #1a1a1a;
-            color: #ff9900;
+        .btn-loc {
+            background: #000;
+            color: #fff;
             border: 1px solid #ff9900;
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.2s;
         }
+
+        .btn-loc:hover { background: #ff9900; color: #000; }
     </style>
 </head>
 <body>
 
-    <div id="ui-container">
-        <div class="btn-github" onclick="resetView()">
-            <span class="text">Olá Mundo</span>
-            <span class="brand">GITHUB</span>
-        </div>
-    </div>
-
     <div id="map"></div>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <div class="overlay" onclick="resetView()">
+        <div class="ola">Olá Mundo</div>
+        <div class="github">GITHUB</div>
+    </div>
+
+    <div class="nav-bar">
+        <button class="btn-loc" onclick="flyToLoc([-43.2105, -22.9519])">Brasil</button>
+        <button class="btn-loc" onclick="flyToLoc([139.6917, 35.6895])">Japão</button>
+        <button class="btn-loc" onclick="flyToLoc([-0.1276, 51.5072])">Londres</button>
+    </div>
 
     <script>
-        // Inicializa o mapa focado no centro do mundo
-        const map = L.map('map').setView([20, 0], 2);
+        // Inicialização do Mapa com Estilo Dark Pro (CartoDB)
+        const map = new maplibregl.Map({
+            container: 'map',
+            style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
+            center: [0, 20],
+            zoom: 1.5,
+            pitch: 45, // Inclinação 3D
+            antialias: true
+        });
 
-        // Camada de Satélite (Esri World Imagery)
-        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-            attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
-        }).addTo(map);
-
-        // Adiciona nomes de cidades e países por cima do satélite
-        L.tileLayer('https://stamen-tiles-{s}.a.ssl.fastly.net/toner-labels/{z}/{x}/{y}{r}.png', {
-            opacity: 0.5
-        }).addTo(map);
-
-        // Função para voltar ao início
-        function resetView() {
-            map.flyTo([20, 0], 2, { duration: 2 });
+        // Efeito de Rotação Contínua (Auto-Rotate)
+        function rotateGlobe() {
+            const center = map.getCenter();
+            center.lng += 0.2;
+            map.setCenter(center);
+            requestAnimationFrame(rotateGlobe);
         }
 
-        // Evento de clique no mapa para mostrar coordenadas e "entrar" no lugar
-        map.on('click', function(e) {
-            const { lat, lng } = e.latlng;
+        map.on('load', () => {
+            // Adiciona neblina e atmosfera 3D
+            map.setFog({
+                'range': [0.5, 10],
+                'color': '#000000',
+                'horizon-blend': 0.1
+            });
             
-            L.popup()
-                .setLatLng(e.latlng)
-                .setContent(`
-                    <div style="text-align:center">
-                        <b style="color:#fff">Coordenadas Exploradas:</b><br>
-                        Lat: ${lat.toFixed(4)}<br>
-                        Lng: ${lng.toFixed(4)}<br>
-                        <button onclick="map.flyTo([${lat}, ${lng}], 15)" 
-                                style="margin-top:10px; background:#ff9900; border:none; padding:5px 10px; cursor:pointer; font-weight:bold; border-radius:4px">
-                            DAR ZOOM AQUI
-                        </button>
-                    </div>
-                `)
-                .openOn(map);
+            // Inicia rotação se o zoom for baixo
+            rotateGlobe();
         });
 
-        // Adiciona alguns marcadores de exemplo em lugares épicos
-        const locais = [
-            { name: "Sede do GitHub (EUA)", coords: [37.7749, -122.4194] },
-            { name: "Cristo Redentor (Brasil)", coords: [-22.9519, -43.2105] },
-            { name: "Pirâmides de Gizé (Egito)", coords: [29.9792, 31.1342] }
-        ];
+        function flyToLoc(coords) {
+            map.flyTo({
+                center: coords,
+                zoom: 12,
+                essential: true,
+                duration: 5000, // Voo cinematográfico de 5 segundos
+                pitch: 60
+            });
+        }
 
-        locais.forEach(local => {
-            L.marker(local.coords).addTo(map).bindPopup(`<b>${local.name}</b>`);
+        function resetView() {
+            map.flyTo({
+                center: [0, 20],
+                zoom: 1.5,
+                pitch: 0,
+                duration: 3000
+            });
+        }
+
+        // Interação de Clique para ver detalhes do lugar
+        map.on('click', (e) => {
+            new maplibregl.Popup()
+                .setLngLat(e.lngLat)
+                .setHTML(`<div style="color:#000; font-weight:bold; padding:5px;">
+                            Explorando: ${e.lngLat.lat.toFixed(2)}, ${e.lngLat.lng.toFixed(2)}
+                          </div>`)
+                .addTo(map);
         });
-
     </script>
 </body>
 </html>
