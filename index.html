@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Global GITHUB Explorer</title>
+    <title>GitHub Satellite Pro</title>
     
     <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
     <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
@@ -12,128 +12,123 @@
         body { margin: 0; padding: 0; background: #000; overflow: hidden; font-family: 'Inter', sans-serif; }
         #map { position: absolute; top: 0; bottom: 0; width: 100%; }
 
-        /* UI Overlay Superior */
-        .overlay {
+        /* Botão Estilizado GITHUB */
+        .header-ui {
             position: absolute;
-            top: 20px;
+            top: 25px;
             left: 50%;
             transform: translateX(-50%);
-            z-index: 10;
+            z-index: 2;
             display: flex;
-            align-items: center;
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(10px);
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
-            border: 1px solid #000;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 8px;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
             overflow: hidden;
             cursor: pointer;
-            transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 1px solid #000;
         }
 
-        .overlay:hover { transform: translateX(-50%) scale(1.05); }
+        .label { padding: 12px 20px; font-weight: 700; color: #000; }
+        .brand { background: #000; color: #ff9900; padding: 12px 20px; font-weight: 900; }
 
-        .ola { padding: 12px 20px; font-weight: 800; color: #000; text-transform: uppercase; }
-        .github { background: #000; color: #ff9900; padding: 12px 20px; font-weight: 900; }
-
-        /* Controles de Navegação */
-        .nav-bar {
+        /* Rodapé com Localizações */
+        .controls {
             position: absolute;
             bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 10;
+            width: 100%;
             display: flex;
+            justify-content: center;
             gap: 10px;
+            z-index: 2;
         }
 
-        .btn-loc {
-            background: #000;
-            color: #fff;
+        .btn {
+            background: rgba(0,0,0,0.8);
+            color: #ff9900;
             border: 1px solid #ff9900;
-            padding: 10px 15px;
-            border-radius: 8px;
+            padding: 8px 15px;
+            border-radius: 5px;
             cursor: pointer;
-            font-weight: bold;
-            transition: 0.2s;
+            font-size: 14px;
+            transition: 0.3s;
         }
 
-        .btn-loc:hover { background: #ff9900; color: #000; }
+        .btn:hover { background: #ff9900; color: #000; }
     </style>
 </head>
 <body>
 
     <div id="map"></div>
 
-    <div class="overlay" onclick="resetView()">
-        <div class="ola">Olá Mundo</div>
-        <div class="github">GITHUB</div>
+    <div class="header-ui" onclick="resetGlobe()">
+        <div class="label">OLÁ MUNDO</div>
+        <div class="brand">GITHUB</div>
     </div>
 
-    <div class="nav-bar">
-        <button class="btn-loc" onclick="flyToLoc([-43.2105, -22.9519])">Brasil</button>
-        <button class="btn-loc" onclick="flyToLoc([139.6917, 35.6895])">Japão</button>
-        <button class="btn-loc" onclick="flyToLoc([-0.1276, 51.5072])">Londres</button>
+    <div class="controls">
+        <button class="btn" onclick="goTo([-43.2105, -22.9519])">Rio de Janeiro</button>
+        <button class="btn" onclick="goTo([-74.006, 40.7128])">Nova York</button>
+        <button class="btn" onclick="goTo([139.6917, 35.6895])">Tóquio</button>
+        <button class="btn" onclick="goTo([2.2945, 48.8584])">Paris</button>
     </div>
 
     <script>
-        // Inicialização do Mapa com Estilo Dark Pro (CartoDB)
         const map = new maplibregl.Map({
             container: 'map',
-            style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
+            style: {
+                version: 8,
+                sources: {
+                    'raster-tiles': {
+                        type: 'raster',
+                        tiles: [
+                            'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+                        ],
+                        tileSize: 256,
+                        attribution: 'Esri Satellite'
+                    }
+                },
+                layers: [{
+                    id: 'simple-tiles',
+                    type: 'raster',
+                    source: 'raster-tiles',
+                    minzoom: 0,
+                    maxzoom: 18
+                }]
+            },
             center: [0, 20],
-            zoom: 1.5,
-            pitch: 45, // Inclinação 3D
-            antialias: true
+            zoom: 2,
+            pitch: 45
         });
 
-        // Efeito de Rotação Contínua (Auto-Rotate)
-        function rotateGlobe() {
-            const center = map.getCenter();
-            center.lng += 0.2;
-            map.setCenter(center);
-            requestAnimationFrame(rotateGlobe);
-        }
-
-        map.on('load', () => {
-            // Adiciona neblina e atmosfera 3D
-            map.setFog({
-                'range': [0.5, 10],
-                'color': '#000000',
-                'horizon-blend': 0.1
-            });
-            
-            // Inicia rotação se o zoom for baixo
-            rotateGlobe();
-        });
-
-        function flyToLoc(coords) {
+        // Função de Voo Cinematográfico
+        function goTo(coords) {
             map.flyTo({
                 center: coords,
-                zoom: 12,
-                essential: true,
-                duration: 5000, // Voo cinematográfico de 5 segundos
-                pitch: 60
+                zoom: 16,
+                pitch: 60,
+                bearing: -20,
+                duration: 6000,
+                essential: true
             });
         }
 
-        function resetView() {
+        function resetGlobe() {
             map.flyTo({
                 center: [0, 20],
-                zoom: 1.5,
+                zoom: 2,
                 pitch: 0,
-                duration: 3000
+                bearing: 0,
+                duration: 4000
             });
         }
 
-        // Interação de Clique para ver detalhes do lugar
-        map.on('click', (e) => {
-            new maplibregl.Popup()
-                .setLngLat(e.lngLat)
-                .setHTML(`<div style="color:#000; font-weight:bold; padding:5px;">
-                            Explorando: ${e.lngLat.lat.toFixed(2)}, ${e.lngLat.lng.toFixed(2)}
-                          </div>`)
-                .addTo(map);
+        // Adiciona atmosfera de brilho (opcional para estética)
+        map.on('load', () => {
+            map.setFog({
+                "range": [0.8, 8],
+                "color": "#000",
+                "horizon-blend": 0.1
+            });
         });
     </script>
 </body>
