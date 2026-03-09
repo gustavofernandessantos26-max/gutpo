@@ -3,119 +3,125 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Explorador Global - GITHUB Edition</title>
-    <script src="https://cesium.com/downloads/cesiumjs/releases/1.108/Build/Cesium/Cesium.js"></script>
-    <link href="https://cesium.com/downloads/cesiumjs/releases/1.108/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <title>Mapa Mundi Interativo - GITHUB</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
     <style>
-        html, body, #cesiumContainer {
-            width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden;
-            background-color: #000;
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body, html { height: 100%; font-family: 'Segoe UI', sans-serif; }
+
+        #map {
+            width: 100%;
+            height: 100vh;
+            background: #0b0e14;
         }
 
-        /* Interface do Botão GitHub */
-        #ui-overlay {
+        /* Sobreposição do Botão */
+        #ui-container {
             position: absolute;
             top: 20px;
-            left: 20px;
-            z-index: 100;
-            display: flex;
-            gap: 10px;
-        }
-
-        .btn-nav {
-            display: flex;
-            align-items: center;
-            background: #fff;
-            border-radius: 5px;
-            cursor: pointer;
-            border: none;
-            overflow: hidden;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-            font-family: sans-serif;
-            transition: 0.3s;
-        }
-
-        .btn-nav:hover { transform: translateY(-2px); }
-
-        .text { padding: 10px 15px; font-weight: bold; color: #000; }
-        .brand { background: #000; padding: 10px 15px; color: #ff9900; font-weight: 900; }
-
-        /* Menu de Destinos */
-        #menu-paises {
-            position: absolute;
-            bottom: 30px;
             left: 50%;
             transform: translateX(-50%);
-            z-index: 100;
+            z-index: 1000;
             display: flex;
+            flex-direction: column;
+            align-items: center;
             gap: 15px;
-            background: rgba(0,0,0,0.7);
-            padding: 15px;
-            border-radius: 50px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,153,0,0.3);
         }
 
-        .dest-btn {
-            background: transparent;
-            border: 1px solid #ff9900;
-            color: #fff;
-            padding: 8px 20px;
-            border-radius: 20px;
+        .btn-github {
+            display: flex;
+            align-items: center;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
             cursor: pointer;
+            border: 2px solid #000;
             transition: 0.3s;
         }
 
-        .dest-btn:hover { background: #ff9900; color: #000; }
+        .btn-github:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 15px 30px rgba(255, 153, 0, 0.4);
+        }
+
+        .text { padding: 15px 25px; font-weight: bold; font-size: 1.1rem; color: #000; }
+        .brand { background: #000; padding: 15px 25px; color: #ff9900; font-weight: 900; font-size: 1.1rem; }
+
+        /* Estilo dos Popups no Mapa */
+        .leaflet-popup-content-wrapper {
+            background: #1a1a1a;
+            color: #ff9900;
+            border: 1px solid #ff9900;
+        }
     </style>
 </head>
 <body>
 
-    <div id="ui-overlay">
-        <div class="btn-nav">
+    <div id="ui-container">
+        <div class="btn-github" onclick="resetView()">
             <span class="text">Olá Mundo</span>
             <span class="brand">GITHUB</span>
         </div>
     </div>
 
-    <div id="menu-paises">
-        <button class="dest-btn" onclick="flyTo(-22.9519, -43.2105, 1500)">Brasil (Rio)</button>
-        <button class="dest-btn" onclick="flyTo(48.8584, 2.2945, 1000)">França (Paris)</button>
-        <button class="dest-btn" onclick="flyTo(35.6895, 139.6917, 2000)">Japão (Tokyo)</button>
-        <button class="dest-btn" onclick="flyTo(-13.1631, -72.5450, 3000)">Peru (Machu Picchu)</button>
-    </div>
+    <div id="map"></div>
 
-    <div id="cesiumContainer"></div>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <script>
-        // Inicializa o Globo com imagens de satélite reais
-        const viewer = new Cesium.Viewer('cesiumContainer', {
-            terrainProvider: Cesium.createWorldTerrain(), // Ativa montanhas 3D
-            baseLayerPicker: false,
-            geocoder: true, // Barra de busca de qualquer lugar do mundo
-            homeButton: false,
-            sceneModePicker: false,
-            navigationHelpButton: false,
-            animation: false,
-            timeline: false
-        });
+        // Inicializa o mapa focado no centro do mundo
+        const map = L.map('map').setView([20, 0], 2);
 
-        // Função de "Voo" cinematográfico para os locais
-        function flyTo(lat, lon, height) {
-            viewer.camera.flyTo({
-                destination: Cesium.Cartesian3.fromDegrees(lon, lat, height),
-                orientation: {
-                    heading: Cesium.Math.toRadians(0),
-                    pitch: Cesium.Math.toRadians(-35),
-                    roll: 0.0
-                },
-                duration: 4 // Tempo de viagem em segundos
-            });
+        // Camada de Satélite (Esri World Imagery)
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+        }).addTo(map);
+
+        // Adiciona nomes de cidades e países por cima do satélite
+        L.tileLayer('https://stamen-tiles-{s}.a.ssl.fastly.net/toner-labels/{z}/{x}/{y}{r}.png', {
+            opacity: 0.5
+        }).addTo(map);
+
+        // Função para voltar ao início
+        function resetView() {
+            map.flyTo([20, 0], 2, { duration: 2 });
         }
 
-        // Adiciona atmosfera e iluminação dinâmica
-        viewer.scene.globe.enableLighting = true;
-        viewer.scene.skyAtmosphere.show = true;
+        // Evento de clique no mapa para mostrar coordenadas e "entrar" no lugar
+        map.on('click', function(e) {
+            const { lat, lng } = e.latlng;
+            
+            L.popup()
+                .setLatLng(e.latlng)
+                .setContent(`
+                    <div style="text-align:center">
+                        <b style="color:#fff">Coordenadas Exploradas:</b><br>
+                        Lat: ${lat.toFixed(4)}<br>
+                        Lng: ${lng.toFixed(4)}<br>
+                        <button onclick="map.flyTo([${lat}, ${lng}], 15)" 
+                                style="margin-top:10px; background:#ff9900; border:none; padding:5px 10px; cursor:pointer; font-weight:bold; border-radius:4px">
+                            DAR ZOOM AQUI
+                        </button>
+                    </div>
+                `)
+                .openOn(map);
+        });
+
+        // Adiciona alguns marcadores de exemplo em lugares épicos
+        const locais = [
+            { name: "Sede do GitHub (EUA)", coords: [37.7749, -122.4194] },
+            { name: "Cristo Redentor (Brasil)", coords: [-22.9519, -43.2105] },
+            { name: "Pirâmides de Gizé (Egito)", coords: [29.9792, 31.1342] }
+        ];
+
+        locais.forEach(local => {
+            L.marker(local.coords).addTo(map).bindPopup(`<b>${local.name}</b>`);
+        });
+
     </script>
 </body>
 </html>
