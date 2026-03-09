@@ -3,88 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Olá Mundo Complexo</title>
+    <title>Botão Olá Mundo</title>
     <style>
-        :root {
-            --primary-color: #00ffcc;
-            --bg-color: #0a0a0a;
-            --font-stack: 'Courier New', Courier, monospace;
-        }
-
         body {
-            background-color: var(--bg-color);
+            background-color: #1a1a1a;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
             margin: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        .custom-button {
+            display: flex;
+            align-items: center;
+            background-color: #ffffff;
+            border: none;
+            border-radius: 8px;
+            padding: 0;
+            cursor: pointer;
             overflow: hidden;
-            font-family: var(--font-stack);
+            transition: transform 0.2s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
         }
 
-        .container {
-            text-align: center;
-            position: relative;
+        .custom-button:hover {
+            transform: scale(1.05);
         }
 
-        .glitch-wrapper {
-            position: relative;
-            display: inline-block;
+        .label-text {
+            padding: 15px 20px;
+            color: #333;
+            font-weight: bold;
+            font-size: 1.2rem;
         }
 
-        h1 {
-            color: var(--primary-color);
-            font-size: 5rem;
-            text-transform: uppercase;
-            letter-spacing: 5px;
-            position: relative;
-            text-shadow: 0 0 10px var(--primary-color);
-            margin: 0;
+        .brand-box {
+            background-color: #000; /* Fundo Preto */
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
         }
 
-        /* Efeito de Cursor Piscante */
-        h1::after {
-            content: '|';
-            animation: blink 0.7s infinite;
-        }
-
-        @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0; }
-        }
-
-        /* Partículas de Fundo (Simuladas via CSS) */
-        .particles {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            z-index: -1;
-            filter: blur(1px);
+        .brand-text {
+            color: #ff9900; /* Laranja */
+            font-weight: 900;
+            font-size: 1.2rem;
+            letter-spacing: -1px;
         }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <div class="glitch-wrapper">
-            <h1 id="typewriter"></h1>
+    <button class="custom-button">
+        <span class="label-text">Olá Mundo</span>
+        <div class="brand-box">
+            <span class="brand-text">GITHUB</span>
         </div>
-    </div>
+    </button>
 
-    <script>
-        const text = "Olá, Mundo!";
-        const speed = 150; // Velocidade em ms
-        let i = 0;
-
-        function typeWriter() {
-            if (i < text.length) {
-                document.getElementById("typewriter").innerHTML += text.charAt(i);
-                i++;
-                setTimeout(typeWriter, speed);
-            }
-        }
-
-        // Inicia a função quando a página carrega
-        window.onload = typeWriter;
-    </script>
 </body>
 </html>
